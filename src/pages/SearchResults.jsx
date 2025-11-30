@@ -30,7 +30,6 @@ export default function SearchResults() {
 
   const [sortBy, setSortBy] = useState('newest');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [displayCount, setDisplayCount] = useState(12);
 
   // Shared query with aggressive caching - uses same key as Home for instant navigation
   const { data: allCars = [], isLoading } = useQuery({
@@ -145,35 +144,9 @@ export default function SearchResults() {
     return result;
   }, [validCars, filters, sortBy]);
 
-  // Progressive loading - start with fewer items, load more as user scrolls
-  const displayedCars = useMemo(() => {
-    return filteredCars.slice(0, displayCount);
-  }, [filteredCars, displayCount]);
+  const displayedCars = filteredCars;
 
-  // Throttled infinite scroll for performance
   useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1200) {
-            if (displayCount < filteredCars.length) {
-              setDisplayCount(prev => Math.min(prev + 12, filteredCars.length));
-            }
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [displayCount, filteredCars.length]);
-
-  // Reset display count when filters change
-  useEffect(() => {
-    setDisplayCount(12);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [filters, sortBy]);
 
@@ -190,7 +163,6 @@ export default function SearchResults() {
       sellerType: 'All',
       features: [],
     });
-    setDisplayCount(12);
   };
 
   return (
@@ -333,18 +305,8 @@ export default function SearchResults() {
                     ))}
                   </div>
 
-                  {/* Loading More Indicator */}
-                  {displayCount < filteredCars.length && (
-                    <div className="mt-12 text-center">
-                      <div className="inline-flex items-center gap-3 px-6 py-3 bg-[#1A1A1C] rounded-full border border-[#2A2A2D]">
-                        <div className="w-5 h-5 border-2 border-[#FF5F2D] border-t-transparent rounded-full animate-spin" />
-                        <span className="text-[#A1A1A7]">Loading more vehicles...</span>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Results Summary */}
-                  {displayCount >= filteredCars.length && filteredCars.length > 0 && (
+                  {filteredCars.length > 0 && (
                     <div className="mt-12 text-center">
                       <p className="text-[#A1A1A7]">
                         Showing all <span className="text-white font-medium">{filteredCars.length}</span> vehicles
