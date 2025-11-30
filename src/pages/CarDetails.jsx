@@ -92,9 +92,11 @@ export default function CarDetails() {
     );
   }
 
-  const images = car.images 
+  const images = car.images
     ? (typeof car.images === 'string' ? car.images.split(',').map(img => img.trim()) : car.images)
-    : [car.main_image || 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1200&q=80&fm=webp'];
+    : [];
+
+  const finalImages = images.length > 0 ? images : [car.main_image || 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1200&q=80&fm=webp'];
 
   const features = car.features 
     ? (typeof car.features === 'string' ? car.features.split(',').map(f => f.trim()) : car.features)
@@ -133,21 +135,21 @@ export default function CarDetails() {
                 className="relative aspect-[16/9] rounded-2xl overflow-hidden cursor-pointer group bg-[#1A1A1C]"
               >
                 <img
-                  src={images[0]}
+                  src={finalImages[0]}
                   alt={`${car.make} ${car.model}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute bottom-6 left-6 text-white font-medium">
-                    Click to view gallery ({images.length} photos)
+                    Click to view gallery ({finalImages.length} photos)
                   </div>
                 </div>
               </div>
 
               {/* Thumbnail Grid */}
-              {images.length > 1 && (
+              {finalImages.length > 1 && (
                 <div className="grid grid-cols-4 gap-3">
-                  {images.slice(1, 5).map((image, index) => (
+                  {finalImages.slice(1, 5).map((image, index) => (
                     <div
                       key={index}
                       onClick={() => {
@@ -420,7 +422,11 @@ export default function CarDetails() {
                 const seen = new Set();
                 return similarCars
                   .filter(c => {
-                    if (c.id === car.id || !c.make || !c.model || !c.price || !c.main_image) {
+                    if (c.id === car.id || !c.make || !c.model || !c.price) {
+                      return false;
+                    }
+                    const imgs = c.images ? (typeof c.images === 'string' ? c.images.split(',') : c.images) : [];
+                    if (imgs.length === 0 && !c.main_image) {
                       return false;
                     }
                     if (seen.has(c.id)) {
@@ -441,7 +447,7 @@ export default function CarDetails() {
 
       {/* Image Carousel */}
       <ImageCarousel
-        images={images}
+        images={finalImages}
         isOpen={showCarousel}
         onClose={() => setShowCarousel(false)}
         initialIndex={selectedImageIndex}

@@ -24,7 +24,11 @@ function CarCard({ car }) {
   };
 
   const isElectric = car.is_electric === 'true' || car.is_electric === true || car.fuel_type?.toLowerCase().includes('electric');
-  const imageUrl = car.main_image || DEFAULT_IMAGE;
+
+  const images = car.images
+    ? (typeof car.images === 'string' ? car.images.split(',').map(img => img.trim()) : car.images)
+    : [];
+  const imageUrl = images.length > 0 ? images[0] : (car.main_image || DEFAULT_IMAGE);
   const mileageValue = car.mileage ? parseInt(String(car.mileage).replace(/[^\d]/g, '')) : null;
   
   return (
