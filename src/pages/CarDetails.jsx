@@ -45,8 +45,7 @@ export default function CarDetails() {
       const { data, error } = await supabase
         .from('vehicles')
         .select('*')
-        .order('created_date', { ascending: false })
-        .limit(100);
+        .order('created_date', { ascending: false });
 
       if (error) throw error;
       return data || [];
