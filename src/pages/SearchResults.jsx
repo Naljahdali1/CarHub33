@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { supabase } from '@/lib/supabase';
 import CarCard from '../components/cars/CarCard';
 import CarCardSkeleton from '../components/cars/CarCardSkeleton';
 import FilterSidebar from '../components/cars/FilterSidebar';
@@ -35,7 +35,16 @@ export default function SearchResults() {
   // Shared query with aggressive caching - uses same key as Home for instant navigation
   const { data: allCars = [], isLoading } = useQuery({
     queryKey: CARS_QUERY_KEY,
-    queryFn: () => base44.entities.Car.list('-created_date', 100),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('created_date', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return data || [];
+    },
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
@@ -45,7 +54,6 @@ export default function SearchResults() {
     if (!allCars || allCars.length === 0) return [];
     const seen = new Set();
     return allCars
-                .map(car => ({ ...(car.data || {}), ...car }))
       .filter(car => {
         // Filter out invalid data - only require ID
         if (!car.id) return false;

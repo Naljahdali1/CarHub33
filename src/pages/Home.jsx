@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { supabase } from '@/lib/supabase';
 import HeroSection from '../components/home/HeroSection';
 import CarSection from '../components/home/CarSection';
 import BrandGrid from '../components/home/BrandGrid';
@@ -8,8 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useTranslation } from '../components/TranslationProvider';
 
-// Shared query key for cars across the app - v3 forces cache refresh
-export const CARS_QUERY_KEY = ['cars-all', 'v3'];
+// Shared query key for cars across the app - v4 uses Supabase
+export const CARS_QUERY_KEY = ['cars-all', 'v4'];
 
 export default function Home() {
   const navigate = useNavigate();
@@ -19,7 +19,16 @@ export default function Home() {
   // Single optimized query with aggressive caching - shared across app
   const { data: allCars = [], isLoading } = useQuery({
     queryKey: CARS_QUERY_KEY,
-    queryFn: () => base44.entities.Car.list('-created_date', 100),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('created_date', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return data || [];
+    },
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
@@ -29,7 +38,6 @@ export default function Home() {
     if (!allCars || allCars.length === 0) return [];
     const seen = new Set();
     return allCars
-                .map(car => ({ ...(car.data || {}), ...car }))
       .filter(car => {
         // Filter out invalid data - only require ID to display everything
         if (!car.id) return false;
@@ -65,7 +73,16 @@ export default function Home() {
   const prefetchSearchResults = useCallback(() => {
     queryClient.prefetchQuery({
       queryKey: CARS_QUERY_KEY,
-      queryFn: () => base44.entities.Car.list('-created_date', 100),
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('vehicles')
+          .select('*')
+          .order('created_date', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+        return data || [];
+      },
       staleTime: 10 * 60 * 1000,
     });
   }, [queryClient]);

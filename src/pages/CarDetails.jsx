@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { supabase } from '@/lib/supabase';
 import { CARS_QUERY_KEY } from './Home';
 import { motion } from 'framer-motion';
 import ImageCarousel from '../components/cars/ImageCarousel';
@@ -40,8 +40,17 @@ export default function CarDetails() {
 
   // Use shared cache for faster loading
   const { data: allCars = [], isLoading: carsLoading } = useQuery({
-    queryKey: ['cars-all', 'v3'],
-    queryFn: () => base44.entities.Car.list('-created_date', 100),
+    queryKey: CARS_QUERY_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('created_date', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return data || [];
+    },
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
@@ -49,14 +58,13 @@ export default function CarDetails() {
   // Find car from cached data
   const car = useMemo(() => {
     const found = allCars.find(c => c.id === carId);
-    return found ? { ...(found.data || {}), ...found } : null;
+    return found || null;
   }, [allCars, carId]);
 
   // Get similar cars from same cache
   const similarCars = useMemo(() => {
     if (!car?.make) return [];
     return allCars
-      .map(c => ({ ...(c.data || {}), ...c }))
       .filter(c => c.make === car.make && c.id !== carId)
       .slice(0, 4);
   }, [allCars, car?.make, carId]);
